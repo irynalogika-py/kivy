@@ -1,0 +1,118 @@
+#:import from_hex kivy.utils.get_color_from_hex
+#:import colormap kivy.utils.colormap
+# colormap — словник кольорів за назвою: colormap['blue'] = (0, 0, 1, 1)
+
+#:set main_color "#F3AF12"
+#:set main_color_dark "#F37C12"
+
+# Спільний стиль кнопок меню
+<ButtonMenu@Button>:
+# Оголошення шаблону (rule) для кастомного віджета.
+# @Button означає: ButtonMenu успадковує Button.
+# Цей блок — аналог класу Python, але у kv-синтаксисі.
+   font_size: "20sp"
+   # Відносний розмір: ширина 100% від батька, висота 15% від батька.
+   size_hint: 1, 0.15
+   # Прибирає стандартне зображення кнопки Kivy (сірий фон).
+   # Порожній рядок = немає текстури.
+   background_normal: ''
+   background_color: from_hex(main_color)
+   color: 0, 0, 0, 1
+   on_press: self.background_color = from_hex(main_color_dark)
+   on_release: self.background_color = from_hex(main_color)
+
+<MenuScreen>:
+   # Правило для класу MenuScreen з main.py.
+   # Kivy шукає збіг імені класу і застосовує цей блок як інтерфейс.
+   BoxLayout:
+      orientation: "vertical"
+      padding: "20dp"
+      spacing: "20dp"
+
+      canvas.before:
+      # Блок для малювання графіки ДО того, як відмалюються дочірні віджети.
+      # Використовується для фону.
+         Color:
+            rgba: colormap['blue']
+         Rectangle:
+            pos: self.pos # Позиція прямокутника = позиція BoxLayout.
+            size: self.size
+
+      Image:
+         source: "assets/images/field.jpg"
+         size_hint: 1, 0.5
+
+      Label:
+         text: "Main Menu"
+         font_size: "40sp"
+         size_hint: 1, 0.2   # Висота 20% від BoxLayout.
+
+      ButtonMenu:
+         text: "PLAY"
+         on_press: root.go_game()
+
+      ButtonMenu:
+         text: "SETTINGS"
+         on_press: root.go_settings()
+
+      ButtonMenu:
+         text: "EXIT"
+         on_press: root.exit_app()
+
+<GameScreen>:
+   BoxLayout:
+      orientation: "vertical"
+      padding: "20dp"
+      spacing: "20dp"
+
+      # Label:
+      #    text: "Game Screen"
+      #    font_size: "40sp"
+
+      Label:
+         id: level_complete
+         # id — унікальний ідентифікатор віджета всередині екрана.
+         # Доступний у Python через self.ids.level_complete
+         text: "Level Complete!"
+         font_size: "30sp"
+         opacity: 0
+         size_hint: 1, 0.1
+
+      Fish:
+         id: fish    # Доступний у Python через self.ids.fish
+         size_hint: 1, 0.5
+
+      Label:
+         # root.score — NumericProperty з GameScreen.
+         # str() перетворює число у рядок для відображення.
+         # Оновлюється автоматично при зміні score.
+         text: str(root.score)
+         font_size: "40sp"
+         size_hint: 1, 0.2
+
+      ButtonMenu:
+         text: "Back to Menu"
+         on_press: root.go_menu()
+
+<SettingsScreen>:
+   BoxLayout:
+      orientation: "vertical"
+      padding: "20dp"
+      spacing: "20dp"
+
+      Label:
+         text: "Settings"
+         font_size: "40sp"
+
+      ButtonMenu:
+         text: "Back to Menu"
+         on_press: root.go_menu()
+
+<Fish>:
+   allow_stretch: True
+   # Дозволяє розтягувати зображення під розмір віджета.
+   # За замовчуванням False — зображення зберігає оригінальний розмір.
+
+   keep_ratio: True
+   # Зберігає пропорції зображення при розтягуванні.
+   # Якщо False — зображення може деформуватися.
