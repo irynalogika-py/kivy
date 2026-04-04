@@ -4,9 +4,10 @@ from kivy.core.window import Window
 from kivy.uix.image import Image
 from kivy.clock import Clock
 from kivy.properties import NumericProperty
-from kivy import platform
+from kivy.utils import platform
 from kivy.animation import Animation
 from kivy.core.audio import SoundLoader
+
 
 # Window.size = (450, 600)
 # Встановлює розмір вікна: ширина 450px, висота 600px
@@ -37,6 +38,7 @@ class MenuScreen(Screen):
 
 class GameScreen(Screen):
     score = NumericProperty(0)
+
     # Лічильник очок. NumericProperty — не звичайна змінна Python.
     # Коли score змінюється в Python, Label з text: str(root.score)
     # у kv-файлі оновлюється автоматично без додаткового коду
@@ -88,23 +90,31 @@ class SettingsScreen(Screen):
         self.manager.current = "menu"
         self.manager.transition.direction = "down"
 
+
 # Клас для обертання картинок;
 # в класі, який спадковує потрібно дадати властивість angle
 class RotatedImage(Image):
     ...  # Порожній клас, який просто додає властивість angle для обертання зображення
-    
+
+
 # Fish успадковує Image — тобто сам є зображенням.
 # Додає до Image логіку кліків і зміни риби.
 class Fish(RotatedImage):
-    fish_current = None   # Назва поточної риби (ключ зі словника FISHES), наприклад "fish1"
+    fish_current = None  # Назва поточної риби (ключ зі словника FISHES), наприклад "fish1"
     fish_index = 0  # Індекс поточної риби у списку рівня LEVELS[LEVEL].
-    hp_current = None   # Поточна кількість HP риби. Зменшується при кожному кліку.
+    hp_current = None  # Поточна кількість HP риби. Зменшується при кожному кліку.
 
     anim_play = False
-    interaction_block = True # Блокування взаємодії під час анімації. True — взаємодія заблокована, False — дозволена.
-    COEF_MULT = 1.5 # Коефіцієнт для збільшення розміру риби під час анімації плавання. 1.5 — збільшує на 50%.
-    angle = NumericProperty(0)  # Властивість для зберігання кута повороту. NumericProperty, щоб можна було анімувати через Animation.
-    
+    interaction_block = True  # Блокування взаємодії під час анімації. True — взаємодія заблокована, False — дозволена.
+    COEF_MULT = 1.5  # Коефіцієнт для збільшення розміру риби під час анімації плавання. 1.5 — збільшує на 50%.
+    angle = NumericProperty(
+        0)  # Властивість для зберігання кута повороту. NumericProperty, щоб можна було анімувати через Animation.
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.GAME_SCREEN = None
+        self.click_music = None
+
     def on_kv_post(self, base_widget):
         # Вбудований метод Kivy.
         # Викликається після того, як kv-файл повністю побудував цей віджет
@@ -114,6 +124,9 @@ class Fish(RotatedImage):
         # self.parent — BoxLayout (безпосередній батько Fish у kv)
         # self.parent.parent — GameScreen (батько BoxLayout)
         # Зберігаємо посилання, щоб потім звертатися до self.GAME_SCREEN.score
+        self.click_music = SoundLoader.load("assets/sound.mp3")
+        if self.click_music:
+            self.click_music.volume = 1.0  # від 0.0 до 1.0
         return super().on_kv_post(base_widget)
 
     def new_fish(self, *args):
@@ -127,41 +140,41 @@ class Fish(RotatedImage):
         # Встановлює кількість HP риби
         # self.opacity = 1   # Робить рибу видимою (після defeated() вона була прихована)
 
-        self.swim() # Запускає анімацію плавання риби
+        self.swim()  # Запускає анімацію плавання риби
 
-    def swim(self): # Анімація появи риби: зліва, з збільшенням розміру і поверненням до нормального
-       self.pos = (self.GAME_SCREEN.x - self.width, self.GAME_SCREEN.height / 2)
-       self.opacity = 1
-       swim = Animation(x = self.GAME_SCREEN.width / 2 - self.width / 2, duration = 1)
-       swim.start(self)
+    def swim(self):  # Анімація появи риби: зліва, з збільшенням розміру і поверненням до нормального
+        self.pos = (self.GAME_SCREEN.x - self.width, self.GAME_SCREEN.height / 2)
+        self.opacity = 1
+        swim = Animation(x=self.GAME_SCREEN.width / 2 - self.width / 2, duration=1)
+        swim.start(self)
 
-       swim.bind(on_complete=lambda w, a: setattr(self, "interaction_block", False)) # Розблоковує взаємодію після завершення анімації плавання. on_complete — подія, яка викликається після закінчення анімації. lambda w, a: setattr(self, "interaction_block", False) — анонімна функція, яка встановлює interaction_block в False.
+        swim.bind(on_complete=lambda w, a: setattr(self, "interaction_block",
+                                                   False))  # Розблоковує взаємодію після завершення анімації плавання. on_complete — подія, яка викликається після закінчення анімації. lambda w, a: setattr(self, "interaction_block", False) — анонімна функція, яка встановлює interaction_block в False.
 
     def defeated(self):
         self.interaction_block = True
-       # Анімація обертання
-        anim = Animation(angle = self.angle + 360, d = 1, t='in_cubic')
-      
-        # Запам'ятовуємо старі розмір і позицію для анімації зменьшення
+        # Анімація обертання
+        anim = Animation(angle=self.angle + 360, d=1, t='in_cubic')
+
+        # Запам'ятовуємо старі розмір і позицію для анімації зменшення
         old_size = self.size.copy()
         old_pos = self.pos.copy()
         # Новий розмір
         new_size = (self.size[0] * self.COEF_MULT * 3, self.size[1] * self.COEF_MULT * 3)
         # Нова позиція риби при збільшенні
         new_pos = (self.pos[0] - (new_size[0] - self.size[0]) / 2, self.pos[1] - (new_size[0] - self.size[1]) / 2)
-        # АНІМАЦІЯ ЗБІЛЬШЕННЯ/ЗМЕНЬШЕННЯ
-        anim &= Animation(size=(new_size), t='in_out_bounce') + Animation(size=(old_size), duration = 0)
-        anim &= Animation(pos=(new_pos), t='in_out_bounce') + Animation(pos=(old_pos), duration = 0)
+        # АНІМАЦІЯ ЗБІЛЬШЕННЯ/ЗМЕНШЕННЯ
+        anim &= Animation(size=new_size, t='in_out_bounce') + Animation(size=old_size, duration=0)
+        anim &= Animation(pos=new_pos, t='in_out_bounce') + Animation(pos=old_pos, duration=0)
 
         # anim = Animation(size=(self.size[0] * self.COEF_MULT * 2, self.size[1] * self.COEF_MULT * 2)) + Animation(size=old_size)
-        anim &= Animation(opacity = 0)  # + Animation(opacity = 1)
+        anim &= Animation(opacity=0)  # + Animation(opacity = 1)
         anim.start(self)
-               
+
     def on_touch_down(self, touch):
         # Вбудований метод Kivy. Викликається при будь-якому дотику/кліку на екран.
         # touch — об'єкт з координатами кліку
-        click_music = SoundLoader.load('assets/click.mp3') 
-        
+
         if not self.collide_point(*touch.pos) or not self.opacity:
             return
         # self.collide_point(*touch.pos) — перевіряє, чи потрапив клік
@@ -171,7 +184,9 @@ class Fish(RotatedImage):
         if not self.anim_play and not self.interaction_block:
             self.hp_current -= 1
             self.GAME_SCREEN.score += 1
-            click_music.play()
+            if app.click_music:
+                # app.click_music.stop()
+                app.click_music.play()
 
             # Клік призвів до змеьшення hp риби
             if self.hp_current > 0:
@@ -180,22 +195,24 @@ class Fish(RotatedImage):
                 old_pos = self.pos.copy()
 
                 # Новий розмір
-                new_size = ( self.size[0] * self.COEF_MULT, self.size[1] * self.COEF_MULT)
+                new_size = (self.size[0] * self.COEF_MULT, self.size[1] * self.COEF_MULT)
                 # Нова позиція риби при збільшенні
-                new_pos = (self.pos[0] - (new_size[0] - self.size[0]) / 2,self.pos[1] - (new_size[0] - self.size[1]) / 2)
-        
+                new_pos = (self.pos[0] - (new_size[0] - self.size[0]) / 2,
+                           self.pos[1] - (new_size[0] - self.size[1]) / 2)
+
                 # АНІМАЦІЯ ЗБІЛЬШЕННЯ/ЗМЕНЬШЕННЯ
-                zoom_anim = Animation(size=(new_size), duration=0.05) + Animation(size=(old_size), duration = 0.05)
-                zoom_anim &= Animation(pos=(new_pos), duration=0.05) + Animation(pos=(old_pos), duration = 0.05)
+                zoom_anim = Animation(size=(new_size), duration=0.05) + Animation(size=(old_size), duration=0.05)
+                zoom_anim &= Animation(pos=(new_pos), duration=0.05) + Animation(pos=(old_pos), duration=0.05)
 
                 zoom_anim.start(self)
                 self.anim_play = True
 
-                zoom_anim.bind(on_complete=lambda *args: setattr(self, "anim_play", False)) # Після завершення анімації зменшення розміру, встановлюємо anim_play в False, щоб дозволити наступну анімацію при наступному кліку.
-            
+                zoom_anim.bind(on_complete=lambda *args: setattr(self, "anim_play",
+                                                                 False))  # Після завершення анімації зменшення розміру, встановлюємо anim_play в False, щоб дозволити наступну анімацію при наступному кліку.
+
             # Клік призвів до знищення риби
             else:
-                self.defeated()    
+                self.defeated()
 
                 # Запуск нової риби або анымації завершення рівня після 1 секунди програвання зникнення риби
                 if len(app.LEVELS[app.LEVEL]) > self.fish_index + 1:
@@ -204,11 +221,11 @@ class Fish(RotatedImage):
                 else:
                     Clock.schedule_once(self.GAME_SCREEN.level_complete, 1.2)
                     self.fish_index = 0  # додати для скидання індексу риби після завершення рівня, щоб при повторному вході в рівень починати з першої риби
-                            
+
         return super().on_touch_down(touch)
 
 
-class ClickerApp(App):
+class UnderwaterClickerApp(App):
     LEVEL = 0
     # Поточний рівень гри. Індекс у списку LEVELS.
 
@@ -220,10 +237,14 @@ class ClickerApp(App):
     # Ключ — назва риби, значення — словник з шляхом до зображення і кількістю HP.
 
     LEVELS = [["fish1", "fish2"]]
+
     # Список рівнів. Кожен рівень — список риб у порядку появи.
     # Зараз один рівень: спочатку fish1, потім fish2.
 
     def build(self):
+        self.click_music = SoundLoader.load("assets/sound.mp3")
+        if self.click_music:
+            self.click_music.volume = 1.0
         # Вбудований метод App. Викликається один раз при запуску програми.
         # Повертає кореневий віджет — те, що відображається у вікні.
         sm = ScreenManager()
@@ -234,10 +255,11 @@ class ClickerApp(App):
         # Саме це значення використовується у self.manager.current = "game"
         return sm
 
-if platform != 'android':
-    Window.size = (450, 900)
 
-app = ClickerApp()
+if platform != 'android':
+    Window.size = (450, 600)
+
+app = UnderwaterClickerApp()
 # Створює екземпляр застосунку. Змінна app використовується у коді
 # для доступу до FISHES, LEVELS, LEVEL через app.FISHES тощо.
 

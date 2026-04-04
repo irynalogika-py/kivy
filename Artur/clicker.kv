@@ -6,10 +6,10 @@
 # Функція для перетворення кольору з різних форматів у RGBA.
 
 #:set main_color "#F3AF12"
-#:set main_color_dark "#F37C12"
+#:set main_color_dark "#5912f3"
 
 <Widget>:
-   font_name: 'assets/fonts/Lemon-Regular.ttf'
+   font_name: 'assets/fonts/lemon-regular.ttf'
 
 # Спільний стиль кнопок меню
 <ButtonMenu@Button>:
@@ -50,7 +50,7 @@
 
       canvas:
          Rectangle:
-            source: 'assets/images/field.jpg'
+            source: 'assets/images/photo_6_2026-04-03_14-41-45.jpg'
             size: dp(750), self.height
             pos: self.center_x - dp(750) / 2, self.y
 
@@ -58,29 +58,21 @@
          size_hint_y: 0.05
 
       Image:
-         source: "lesson_M3Y4/assets/images/Image.png"
+         source: "assets/images/photo_1_2026-04-03_14-41-45.jpg"
          allow_stretch: True
          size_hint_y: 0.5
 
       Label:
-         text: "UNDERWATER\nCLICKER"
-         color: from_hex('#3706e4bd')
+         text: "MonSter CliCer"
+         color: from_hex('#f31212')
          font_size: "50sp"
-         halign: "center"
+         align: "center"
          size_hint_y: 0.15
 
       ButtonMenu:
          text: "PLAY"
          size_hint_y: 0.15
          on_press: root.go_game()
-
-      # ButtonMenu:
-      #    text: "SETTINGS"
-      #    on_press: root.go_settings()
-
-      # ButtonMenu:
-      #    text: "EXIT"
-      #    on_press: root.exit_app()
 
       BoxLayout:
          size_hint_y: 0.15
@@ -104,11 +96,11 @@
       spacing: "20dp"
 
       canvas:
-         # Color:
-         #    rgba: 255, 0, 0, 1
+         #Color:
+            #rgba: 255, 8, 115, 1
 
          Rectangle:
-            source: 'assets/images/Image.png'
+            source: 'assets/images/photo_3_2026-04-03_14-41-45.jpg'
             pos: self.pos
             size: self.size
 
